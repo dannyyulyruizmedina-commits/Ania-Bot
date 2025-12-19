@@ -95,6 +95,6 @@ ${moneda}: +46`.trim()
 }
 
 
-handler.command = ['regback']
+handler.command = ['reg']
 
 export default handler

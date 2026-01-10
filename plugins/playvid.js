@@ -39,7 +39,7 @@ async function getAud(url) {
 const apis = [
 { 
   api: 'Adonix', 
-  endpoint: `https://api-adonix.ultraplus.click/download/ytaudio?apikey=SENKU&url=${encodeURIComponent(url)}`, 
+  endpoint: `https://api-adonix.ultraplus.click/download/ytaudio?apikey=Mikeywilker&url=${encodeURIComponent(url)}`, 
   extractor: res => res.data?.url 
 }
 ]

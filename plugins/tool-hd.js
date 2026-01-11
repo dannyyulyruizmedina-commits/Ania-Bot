@@ -61,7 +61,7 @@ let handler = async (m, { conn, usedPrefix, command }) => {
     // CHANGED: Now uses Uguu instead of Catbox
     let uploadedUrl = await uploadToUguu(img)
 
-    const api = `https://api-adonix.ultraplus.click/canvas/hd?apikey=WilkerKeydukz9l6871&url=${encodeURIComponent(uploadedUrl)}`
+    const api = `https://api-adonix.ultraplus.click/canvas/hd?apikey=Mikeywilker1&url=${encodeURIComponent(uploadedUrl)}`
     const res = await fetch(api)
     if (!res.ok) throw new Error(`Error en la API: ${res.statusText}`)
     const data = await res.json()
@@ -73,7 +73,7 @@ let handler = async (m, { conn, usedPrefix, command }) => {
 
     await conn.sendMessage(m.chat, {
       image: buffer,
-      caption: '✅ *Imagen mejorada con éxito por api adonix*'
+      caption: '✅ *Imagen mejorada con éxito*'
     }, { quoted: m })
 
     await m.react('✅')

@@ -8,7 +8,7 @@ await m.react('🕒')
 // API específica para Instagram
 if (/(instagram\.com)/i.test(args[0])) {
 try {
-const api = `https://api-adonix.ultraplus.click/download/instagram?apikey=WilkerKeydukz9l6871&url=${url}`
+const api = `https://api-adonix.ultraplus.click/download/instagram?apikey=Mikeywilker1&url=${url}`
 const res = await fetch(api)
 const json = await res.json()
 if (json.status && json.data?.length) {
@@ -19,7 +19,7 @@ data = json.data.map(v => v.url)
 // API específica para Facebook
 if (/(facebook\.com|fb\.watch)/i.test(args[0]) && !data.length) {
 try {
-const api = `https://api-adonix.ultraplus.click/download/facebook?apikey=WilkerKeydukz9l6871&url=${url}`
+const api = `https://api-adonix.ultraplus.click/download/facebook?apikey=Mikeywilker1&url=${url}`
 const res = await fetch(api)
 const json = await res.json()
 if (json.status && json.result?.media?.video_hd) {

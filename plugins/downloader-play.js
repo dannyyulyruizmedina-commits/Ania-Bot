@@ -1,14 +1,13 @@
-const axios = require("axios");
-const yts = require("yt-search");
-const fs = require("fs");
-const { exec } = require("child_process");
+import axios from "axios";
+import yts from "yt-search";
+import fs from "fs";
+import { exec } from "child_process";
 
 const ADONIX_API = "https://api-adonix.ultraplus.click/download/ytaudio";
 const ADONIX_KEY = "dvyer";
-
 const BOT_NAME = "KILLUA-BOT v1.00";
 
-module.exports = {
+const handler = {
   command: ["ytaudio"],
   categoria: "descarga",
   description: "Descarga el audio de un video de YouTube y lo envía reproducible",
@@ -27,7 +26,6 @@ module.exports = {
       let videoUrl = args.join(" ");
       let title = "audio";
 
-
       if (!videoUrl.startsWith("http")) {
         const search = await yts(videoUrl);
         if (!search.videos?.length) {
@@ -42,14 +40,12 @@ module.exports = {
         title = search.videos[0].title || title;
       }
 
-
       await client.reply(
         m.chat,
         `⏳ Procesando tu audio...\nPuede tardar si el archivo es pesado.\n🤖 ${BOT_NAME}`,
         m,
         global.channelInfo
       );
-
 
       const res = await axios.get(
         `${ADONIX_API}?url=${encodeURIComponent(videoUrl)}&apikey=${ADONIX_KEY}`,
@@ -64,10 +60,11 @@ module.exports = {
         .trim()
         .slice(0, 60);
 
-
-      const audioRes = await axios.get(data.url, { responseType: "arraybuffer", timeout: 120000 });
+      const audioRes = await axios.get(data.url, { 
+        responseType: "arraybuffer", 
+        timeout: 120000 
+      });
       fs.writeFileSync("./temp.mp4", audioRes.data);
-
 
       await new Promise((resolve, reject) => {
         exec("ffmpeg -y -i temp.mp4 temp.mp3", (err) => {
@@ -75,7 +72,6 @@ module.exports = {
           else resolve();
         });
       });
-
 
       const audioBuffer = fs.readFileSync("./temp.mp3");
       await client.sendMessage(
@@ -88,7 +84,6 @@ module.exports = {
         },
         { quoted: m, ...global.channelInfo }
       );
-
 
       fs.unlinkSync("./temp.mp4");
       fs.unlinkSync("./temp.mp3");
@@ -104,3 +99,5 @@ module.exports = {
     }
   }
 };
+
+export default handler;

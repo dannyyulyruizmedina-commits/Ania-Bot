@@ -5,9 +5,10 @@ import { exec } from "child_process";
 
 const ADONIX_API = "https://api-adonix.ultraplus.click/download/ytaudio";
 const ADONIX_KEY = "dvyer";
+
 const BOT_NAME = "KILLUA-BOT v1.00";
 
-const handler = {
+export const ytaudioCommand = {
   command: ["ytaudio"],
   categoria: "descarga",
   description: "Descarga el audio de un video de YouTube y lo envía reproducible",
@@ -60,10 +61,7 @@ const handler = {
         .trim()
         .slice(0, 60);
 
-      const audioRes = await axios.get(data.url, { 
-        responseType: "arraybuffer", 
-        timeout: 120000 
-      });
+      const audioRes = await axios.get(data.url, { responseType: "arraybuffer", timeout: 120000 });
       fs.writeFileSync("./temp.mp4", audioRes.data);
 
       await new Promise((resolve, reject) => {
@@ -99,5 +97,3 @@ const handler = {
     }
   }
 };
-
-export default handler;

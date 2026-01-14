@@ -1,202 +1,221 @@
-import fetch from "node-fetch"
+import fetch from 'node-fetch'
 import yts from 'yt-search'
-import ytdl from '@distube/ytdl-core'
-import { youtubedl, youtubedlv2 } from '@bochilteam/scraper'
+import axios from 'axios'
+import fs from 'fs'
+import path from 'path'
+import { exec } from 'child_process'
+import config from '../config.js'
 
-const BOT_NAME = "KILLUA-BOT v2.00"
-const ADONIX_API = "https://api-adonix.ultraplus.click/download/ytaudio"
-const ADONIX_KEY = "dvyer"
+console.log('[INIT] play.js cargado')
 
-// APIs alternativas
-const APIs = {
-  VIKY: 'https://vihangayt.me/download/audio?url=',
-  ZENZ: 'https://api.enzu.org/api/yt-audio?url=',
-  TOMAS: 'https://api.tomas.media/download/audio?url=',
-  NEKOS: 'https://nekos.me/api/v1/yt/audio?url='
+const LimitAud = 725 * 1024 * 1024
+const LimitVid = 425 * 1024 * 1024
+const userRequests = new Set()
+
+console.log('[INIT] Límites definidos', { LimitAud, LimitVid })
+
+const TMP_DIR = './tmp'
+console.log('[INIT] TMP_DIR =', TMP_DIR)
+
+if (!fs.existsSync(TMP_DIR)) {
+  console.log('[INIT] TMP no existe, creando...')
+  fs.mkdirSync(TMP_DIR)
+  console.log('[INIT] TMP creado')
+} else {
+  console.log('[INIT] TMP ya existe')
 }
 
-global.pendingDownloads = global.pendingDownloads || new Map()
-
-const handler = async (m, { conn, text, usedPrefix, command }) => {
+/* ======================
+   HELPERS
+====================== */
+async function getFileSize(url) {
+  console.log('[HELPER] getFileSize llamado:', url)
   try {
-    if (!text?.trim()) return conn.reply(m.chat, `❀ Por favor, ingresa el nombre o enlace de YouTube.`, m, global.channelInfo)
+    const r = await fetch(url, { method: 'HEAD' })
+    const size = parseInt(r.headers.get('content-length') || 0)
+    console.log('[HELPER] Tamaño detectado:', size)
+    return size
+  } catch (e) {
+    console.log('[HELPER] Error en getFileSize:', e.message)
+    return 0
+  }
+}
 
-    if (global.pendingDownloads.get(m.sender)) {
-      return conn.reply(
-        m.chat,
-        "⏳ Ya tienes una descarga en proceso. Espera a que termine.",
-        m,
-        global.channelInfo
+const playCommand = {
+  name: "play",
+  category: "descargas",
+  use: "play <nombre o enlace>",
+  description: "Busca y descarga audio o video de YouTube.",
+  aliases: ['musica', 'play2', 'video', 'play3', 'playdoc', 'play4', 'playdoc2'],
+
+  async execute({ sock, msg, args, commandName }) {
+    console.log('[EXECUTE] Comando detectado')
+    console.log('[EXECUTE] Sender:', msg.sender)
+    console.log('[EXECUTE] Chat:', msg.key.remoteJid)
+    console.log('[EXECUTE] Args:', args)
+    console.log('[EXECUTE] CommandName:', commandName)
+
+    const text = args.join(' ')
+    console.log('[EXECUTE] Texto unido:', text)
+
+    if (!text.trim()) {
+      console.log('[VALIDATION] Texto vacío')
+      return sock.sendMessage(
+        msg.key.remoteJid,
+        { text: '¿Qué canción quieres escuchar?\nEjemplo: .play In the end' },
+        { quoted: msg }
       )
     }
 
-    global.pendingDownloads.set(m.sender, true)
-    await m.react('🕒')
-
-    const videoMatch = text.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/|v\/))([a-zA-Z0-9_-]{11})/)
-    const query = videoMatch ? 'https://youtu.be/' + videoMatch[1] : text
-    const search = await yts(query)
-    const result = videoMatch
-      ? search.videos.find(v => v.videoId === videoMatch[1]) || search.all[0]
-      : search.all[0]
-
-    if (!result) throw '❌ No se encontraron resultados.'
-
-    const { title, thumbnail, timestamp, views, ago, url, author, seconds } = result
-    
-    // Verificar duración (30 min = 1800 seg)
-    if (seconds > 1800) throw '❌ El video supera el límite de 30 minutos.'
-    
-    // Verificar si es un video válido
-    if (!url || !url.includes('youtube.com') && !url.includes('youtu.be')) {
-      throw '❌ Enlace de YouTube no válido.'
+    if (userRequests.has(msg.sender)) {
+      console.log('[LOCK] Usuario ya tiene descarga activa')
+      return sock.sendMessage(
+        msg.key.remoteJid,
+        { text: '⏳ Ya tienes una descarga en proceso.' },
+        { quoted: msg }
+      )
     }
 
-    const vistas = formatViews(views)
-    const info = `「 🎵 」 *DESCARGANDO AUDIO*\n\n` +
-                 `📌 *Título:* ${title}\n` +
-                 `👤 *Canal:* ${author?.name || 'Desconocido'}\n` +
-                 `👁️ *Vistas:* ${vistas}\n` +
-                 `⏱️ *Duración:* ${timestamp}\n` +
-                 `📅 *Publicado:* ${ago}\n` +
-                 `🔗 *Enlace:* ${url}`
+    console.log('[LOCK] Registrando usuario en cola')
+    userRequests.add(msg.sender)
 
-    const thumb = (await conn.getFile(thumbnail)).data
-    await conn.sendMessage(m.chat, { 
-      image: thumb, 
-      caption: info 
-    }, { quoted: m, ...global.channelInfo })
-
-    // Intentar múltiples métodos para obtener el audio
-    let audioUrl = null
-    let metodo = ''
-    
-    // Método 1: Usar ytdl-core directamente
     try {
-      const info = await ytdl.getInfo(url)
-      const format = ytdl.chooseFormat(info.formats, { quality: 'highestaudio' })
-      if (format && format.url) {
-        audioUrl = format.url
-        metodo = 'ytdl-core'
+      console.log('[STEP] Reaccion 🔍')
+      await sock.sendMessage(msg.key.remoteJid, { react: { text: '🔍', key: msg.key } })
+
+      console.log('[SEARCH] Buscando en YouTube:', text)
+      const search = await yts(text)
+      console.log('[SEARCH] Resultado completo recibido')
+
+      const video = search.videos[0]
+      console.log('[SEARCH] Video seleccionado:', video)
+
+      if (!video) {
+        console.log('[ERROR] No se encontró ningún video')
+        throw new Error('No se encontraron resultados')
       }
-    } catch {}
 
-    // Método 2: Usar scraper como respaldo
-    if (!audioUrl) {
-      try {
-        const yt = await youtubedl(url).catch(async () => await youtubedlv2(url))
-        const audio = await yt.audio['128kbps'].download()
-        if (audio) {
-          audioUrl = audio
-          metodo = 'scraper'
+      const isDocument = ['play3', 'playdoc', 'play4', 'playdoc2'].includes(commandName)
+      const isAudio = ['play', 'musica', 'play3', 'playdoc'].includes(commandName)
+
+      console.log('[MODE] isAudio:', isAudio)
+      console.log('[MODE] isDocument:', isDocument)
+
+      console.log('[SEND] Enviando preview')
+      await sock.sendMessage(
+        msg.key.remoteJid,
+        {
+          image: { url: video.image },
+          caption: `🎶 Encontrado\n\nTítulo: ${video.title}\nDuración: ${video.timestamp}`
+        },
+        { quoted: msg }
+      )
+
+      /* ======================
+         AUDIO
+      ====================== */
+      if (isAudio) {
+        console.log('[AUDIO] Modo audio activado')
+
+        const apiURL = `https://gawrgura-api.onrender.com/download/ytmp3?url=${encodeURIComponent(video.url)}`
+        console.log('[API] URL construida:', apiURL)
+
+        const apiRes = await axios.get(apiURL)
+        console.log('[API] Respuesta completa:', apiRes.data)
+
+        if (!apiRes.data?.status) {
+          console.log('[API] status=false')
+          throw new Error('API no devolvió status válido')
         }
-      } catch {}
-    }
 
-    // Método 3: Intentar APIs alternativas
-    if (!audioUrl) {
-      const apiResults = await Promise.any([
-        fetchAudioFromAPI(url, APIs.VIKY, 'Viky'),
-        fetchAudioFromAPI(url, APIs.ZENZ, 'Zenz'),
-        fetchAudioFromAPI(url, APIs.TOMAS, 'Tomas'),
-        fetchAudioFromAPI(url, APIs.NEKOS, 'Nekos'),
-        fetchAudioFromAPI(url, `${ADONIX_API}?apikey=${ADONIX_KEY}&url=`, 'Adonix')
-      ]).catch(() => null)
-      
-      if (apiResults) {
-        audioUrl = apiResults.url
-        metodo = apiResults.api
+        const audioURL = apiRes.data.result
+        console.log('[API] audioURL:', audioURL)
+
+        const safeTitle = video.title.replace(/[^\w\s]/gi, '').slice(0, 40)
+        console.log('[FILE] safeTitle:', safeTitle)
+
+        const rawPath = path.join(TMP_DIR, `${Date.now()}_raw`)
+        const mp3Path = path.join(TMP_DIR, `${Date.now()}.mp3`)
+        console.log('[FILE] rawPath:', rawPath)
+        console.log('[FILE] mp3Path:', mp3Path)
+
+        console.log('[DOWNLOAD] Iniciando fetch audio RAW')
+        const res = await fetch(audioURL)
+
+        console.log('[DOWNLOAD] Status fetch:', res.status)
+
+        const stream = fs.createWriteStream(rawPath)
+        console.log('[DOWNLOAD] WriteStream creado')
+
+        await new Promise((resolve, reject) => {
+          res.body.pipe(stream)
+          res.body.on('error', e => {
+            console.log('[DOWNLOAD] Error stream:', e.message)
+            reject(e)
+          })
+          stream.on('finish', () => {
+            console.log('[DOWNLOAD] Stream finalizado')
+            resolve()
+          })
+        })
+
+        console.log('[FFMPEG] Ejecutando conversión')
+        await new Promise((resolve, reject) => {
+          exec(
+            `ffmpeg -y -i "${rawPath}" -vn -ar 44100 -ac 2 -ab 128k "${mp3Path}"`,
+            err => {
+              if (err) {
+                console.log('[FFMPEG] Error:', err.message)
+                reject(err)
+              } else {
+                console.log('[FFMPEG] Conversión exitosa')
+                resolve()
+              }
+            }
+          )
+        })
+
+        console.log('[SEND] Enviando audio a WhatsApp')
+        await sock.sendMessage(
+          msg.key.remoteJid,
+          {
+            audio: fs.readFileSync(mp3Path),
+            mimetype: 'audio/mpeg',
+            fileName: `${safeTitle}.mp3`
+          },
+          { quoted: msg }
+        )
+
+        console.log('[CLEANUP] Eliminando raw')
+        fs.unlinkSync(rawPath)
+
+        console.log('[CLEANUP] Eliminando mp3')
+        fs.unlinkSync(mp3Path)
+
+        console.log('[AUDIO] Proceso de audio finalizado')
       }
+
+      console.log('[SUCCESS] Proceso completado')
+      await sock.sendMessage(msg.key.remoteJid, { react: { text: '✅', key: msg.key } })
+
+    } catch (err) {
+      console.log('[CATCH] Error atrapado')
+      console.log('[CATCH] Mensaje:', err.message)
+      console.log('[CATCH] Stack:', err.stack)
+
+      await sock.sendMessage(msg.key.remoteJid, { react: { text: '❌', key: msg.key } })
+      await sock.sendMessage(
+        msg.key.remoteJid,
+        { text: `❌ Error: ${err.message}` },
+        { quoted: msg }
+      )
+    } finally {
+      console.log('[FINALLY] Eliminando usuario de cola')
+      userRequests.delete(msg.sender)
+      console.log('[FINALLY] userRequests size:', userRequests.size)
     }
-
-    if (!audioUrl) throw '❌ No se pudo obtener el audio. Intenta con otro video.'
-
-    // Enviar el audio
-    await conn.sendMessage(
-      m.chat,
-      {
-        audio: { url: audioUrl },
-        fileName: `${title.replace(/[^\w\s]/gi, '')}.mp3`,
-        mimetype: 'audio/mpeg',
-        contextInfo: {
-          externalAdReply: {
-            title: title.substring(0, 60),
-            body: `📁 Método: ${metodo} | 🎵 ${BOT_NAME}`,
-            thumbnail: thumb,
-            sourceUrl: url,
-            mediaType: 2
-          }
-        }
-      },
-      { quoted: m, ...global.channelInfo }
-    )
-
-    await m.react('✅')
-    
-  } catch (e) {
-    await m.react('❌')
-    console.error('Error en play:', e)
-    
-    let errorMsg = '❌ Error al descargar el audio.\n'
-    if (e.message?.includes('Private video')) {
-      errorMsg += 'El video es privado o no está disponible.'
-    } else if (e.message?.includes('age restricted')) {
-      errorMsg += 'El video tiene restricción de edad.'
-    } else if (e.message?.includes('Unavailable')) {
-      errorMsg += 'El video no está disponible en tu región.'
-    } else {
-      errorMsg += `Detalle: ${e.message || e}\n\nUsa *${usedPrefix}report* para informar el problema.`
-    }
-    
-    return conn.reply(m.chat, errorMsg, m, global.channelInfo)
-  } finally {
-    global.pendingDownloads.delete(m.sender)
   }
 }
 
-handler.command = handler.help = ['play', 'yta', 'ytmp3', 'playaudio', 'audio']
-handler.tags = ['descargas']
-handler.group = true
-handler.limit = 2 // Límite de uso
-export default handler
-
-// Función para probar APIs alternativas
-async function fetchAudioFromAPI(url, apiUrl, apiName) {
-  try {
-    const fullUrl = apiUrl + encodeURIComponent(url)
-    const res = await fetch(fullUrl, { timeout: 15000 })
-    const data = await res.json()
-    
-    // Diferentes estructuras de respuesta de APIs
-    const audioUrl = data?.url || data?.data?.url || data?.result?.url || data?.audio?.url
-    if (audioUrl && (audioUrl.endsWith('.mp3') || audioUrl.includes('googlevideo.com'))) {
-      return { url: audioUrl, api: apiName }
-    }
-  } catch (e) {
-    console.log(`API ${apiName} falló:`, e.message)
-  }
-  throw new Error(`API ${apiName} no disponible`)
-}
-
-// Función para obtener audio de Adonix (original)
-async function getAud(url) {
-  try {
-    const endpoint = `${ADONIX_API}?apikey=${ADONIX_KEY}&url=${encodeURIComponent(url)}`
-    const res = await fetch(endpoint, { timeout: 10000 }).then(r => r.json())
-    if (res?.data?.url) return { url: res.data.url, api: 'Adonix' }
-  } catch (e) {
-    console.error("Error en API Adonix:", e.message)
-  }
-  return null
-}
-
-function formatViews(views) {
-  if (!views || views === undefined) return "N/A"
-  const num = parseInt(views.toString().replace(/\D/g, ''))
-  if (isNaN(num)) return "N/A"
-  
-  if (num >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(1)}B`
-  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`
-  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`
-  return num.toString()
-}
+console.log('[EXPORT] playCommand exportado')
+export default playCommand

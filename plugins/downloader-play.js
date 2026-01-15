@@ -2,7 +2,7 @@ import yts from 'yt-search'
 
 // Configuración
 const API_URL = 'https://api-adonix.ultraplus.click/download/ytaudio'
-const API_KEY = 'WilkerKeydukz9l6871' // Tu API key aquí
+const API_KEY = 'Mikeywilker1' // Tu API key aquí
 const MAX_SECONDS = 90 * 60 // 90 minutos máximo
 const HTTP_TIMEOUT_MS = 90 * 1000 // 90 segundos timeout
 

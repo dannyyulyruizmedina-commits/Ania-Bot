@@ -203,13 +203,6 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
 
   const caption =
     `🎵 *PROCESANDO AUDIO*\n\n` +
-    `📌 *Título:* ${title}\n` +
-    `👤 *Canal:* ${author}\n` +
-    `⏱️ *Duración:* ${duration}\n` +
-    `👁️ *Vistas:* ${views}\n` +
-    `🔗 *Enlace:* ${ytUrl}\n\n` +
-    `_Descargando audio..._`
-
   // Enviar información del video
   try {
     if (thumbnail) {

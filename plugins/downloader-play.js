@@ -203,6 +203,12 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
 
   const caption =
     `🎵 *PROCESANDO AUDIO*\n\n` +
+    `` 
+    `` 
+    `` 
+    `` 
+    `` 
+    `_Descargando audio..._`
 
   // Enviar información del video
   try {

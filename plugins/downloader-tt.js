@@ -45,13 +45,14 @@ ${usedPrefix + command} https://www.tiktok.com/@usuario/video/123456789`
   try {
     await conn.sendMessage(m.chat, { react: { text: '⏳', key: m.key } })
 
-    let apiURL = `https://api-adonix.ultraplus.click/download/tiktok?apikey=Mikeywilker1=${encodeURIComponent(args[0])}`
+    // API actualizada
+    let apiURL = `https://api-adonix.ultraplus.click/download/tiktok?apikey=Mikeywilker1&url=${encodeURIComponent(args[0])}`
     let response = await fetch(apiURL)
     let data = await response.json()
 
-    if (!data.status || !data.data?.video) throw new Error('No se pudo obtener el video')
+    if (!data.status || !data.result?.video) throw new Error('No se pudo obtener el video')
 
-    let info = data.data
+    let info = data.result
 
     let caption = `
 📌 Título: *${info.title || 'Sin título'}*
@@ -83,6 +84,7 @@ ${usedPrefix + command} https://www.tiktok.com/@usuario/video/123456789`
     await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
 
   } catch (err) {
+    console.error(err) // Para debugging
     await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
     m.reply('❌ No se pudo procesar el video. Intenta nuevamente más tarde.')
   }

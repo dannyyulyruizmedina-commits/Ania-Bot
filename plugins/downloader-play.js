@@ -41,7 +41,7 @@ export default {
         }
       } catch (err) {
       }
-      const audio = await getAudioFromApis(url)
+      const audio = await getAudioFromApi(url)
       if (!audio?.url) {
         return m.reply('《✧》 No se pudo descargar el *audio*, intenta más tarde.')
       }
@@ -53,60 +53,21 @@ export default {
   }
 }
 
-async function getAudioFromApis(url) {
-  const apis = [
-    { 
-      api: 'Adonix', 
-      endpoint: `https://api-adonix.ultraplus.click/download/ytaudio?apikey=Mikeywilker1&url=${encodeURIComponent(url)}`, 
-      extractor: res => res?.data?.url 
-    },    
-    { 
-      api: 'Ootaizumi', 
-      endpoint: `${global.APIs.ootaizumi.url}/downloader/youtube/play?query=${encodeURIComponent(url)}`, 
-      extractor: res => res.result?.download 
-    },
-    { 
-      api: 'Vreden', 
-      endpoint: `${global.APIs.vreden.url}/api/v1/download/youtube/audio?url=${encodeURIComponent(url)}&quality=256`, 
-      extractor: res => res.result?.download?.url 
-    },
-    { 
-      api: 'Stellar', 
-      endpoint: `${global.APIs.stellar.url}/dl/ytmp3?url=${encodeURIComponent(url)}&quality=256&key=${global.APIs.stellar.key}`, 
-      extractor: res => res.data?.dl 
-    },
-    { 
-      api: 'Ootaizumi v2', 
-      endpoint: `${global.APIs.ootaizumi.url}/downloader/youtube?url=${encodeURIComponent(url)}&format=mp3`, 
-      extractor: res => res.result?.download 
-    },
-    { 
-      api: 'Vreden v2', 
-      endpoint: `${global.APIs.vreden.url}/api/v1/download/play/audio?query=${encodeURIComponent(url)}`, 
-      extractor: res => res.result?.download?.url 
-    },
-    { 
-      api: 'Nekolabs', 
-      endpoint: `${global.APIs.nekolabs.url}/downloader/youtube/v1?url=${encodeURIComponent(url)}&format=mp3`, 
-      extractor: res => res.result?.downloadUrl 
-    },
-    { 
-      api: 'Nekolabs v2', 
-      endpoint: `${global.APIs.nekolabs.url}/downloader/youtube/play/v1?q=${encodeURIComponent(url)}`, 
-      extractor: res => res.result?.downloadUrl 
-    }
-  ]
-
-  for (const { api, endpoint, extractor } of apis) {
-    try {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 10000)
-      const res = await fetch(endpoint, { signal: controller.signal }).then(r => r.json())
-      clearTimeout(timeout)
-      const link = extractor(res)
-      if (link) return { url: link, api }
-    } catch (e) {}
-    await new Promise(resolve => setTimeout(resolve, 500))
+async function getAudioFromApi(url) {
+  const endpoint = `https://api-adonix.ultraplus.click/download/ytaudio?apikey=Mikeywilker1&url=${encodeURIComponent(url)}`
+  
+  try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 15000)
+    const res = await fetch(endpoint, { signal: controller.signal }).then(r => r.json())
+    clearTimeout(timeout)
+    
+    // Extraer la URL del audio de la respuesta
+    const link = res?.data?.url
+    if (link) return { url: link, api: 'Adonix' }
+  } catch (e) {
+    console.error('Error fetching audio from API:', e)
   }
+  
   return null
 }

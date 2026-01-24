@@ -43,7 +43,7 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
     }
 
     const caption = `
-✧━───『 𝙸𝚗𝚏𝚘 𝚍𝚎𝚕 𝚅𝚒𝚍𝚎𝚘 』───━✧
+✧━─『 𝙸𝚗𝚏𝚘 𝚍𝚎𝚕 𝚅𝚒𝚍𝚎𝚘 』─━✧
 
 🎼 𝑻𝒊́𝒕𝒖𝒍𝒐: ${title}
 📺 𝑪𝒂𝒏𝒂𝒍: ${authorName}
@@ -51,7 +51,7 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
 ⏳ 𝑫𝒖𝒓𝒂𝒄𝒊𝒐́𝒏: ${durationTimestamp}
 🌐 𝑬𝒏𝒍𝒂𝒄𝒆: ${url}
 
-✧━───『 Michi wabot 』───━✧
+✧━─『 Michi wabot 』─━✧
 ⚡ *Powered by WILKER OFC* ⚡
 `
 
@@ -61,7 +61,7 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
       {
         image: thumb,
         caption,
-        footer: "⚡ Shadow — Descargas rápidas ⚡",
+        footer: "⚡ Michi — Descargas rápidas ⚡",
         buttons: [
           { buttonId: `shadowaudio ${url}`, buttonText: { displayText: "🎵 𝘿𝙚𝙨𝙘𝙖𝙧𝙜𝙖𝙧 𝘼𝙪𝙙𝙞𝙤" }, type: 1 },
           { buttonId: `shadowvideo ${url}`, buttonText: { displayText: "🎬 𝘿𝙚𝙨𝙘𝙖𝙧𝙜𝙖𝙧 𝙑𝙞𝙙𝙚𝙤" }, type: 1 }

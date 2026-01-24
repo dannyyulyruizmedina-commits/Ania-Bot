@@ -74,7 +74,7 @@ let handler = async (m, { conn, args }) => {
                     image: { url: safeThumbnail },
                     caption: caption,
                     buttons: buttons,
-                    footer: "🐉 Gohan Beast ⚡",
+                    footer: "🐉 SonGokuBot • Modo Gohan Beast ⚡",
                     headerType: 4
                 },
                 { quoted: m }
@@ -86,7 +86,7 @@ let handler = async (m, { conn, args }) => {
                 {
                     text: caption,
                     buttons: buttons,
-                    footer: "🐉 Gohan Beast ⚡",
+                    footer: "🐉 SonGokuBot • Modo Gohan Beast ⚡",
                     headerType: 1
                 },
                 { quoted: m }

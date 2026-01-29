@@ -1,389 +1,155 @@
-// 🎵 TECH BOT V1 - Descarga de audio de YouTube
-// Hecho por Ado :D 
-import axios from 'axios';
-import fetch from 'node-fetch';
-import yts from "yt-search";
+import yts from "yt-search"
+import fetch from "node-fetch"
 
-// 🎵 Cooldown system
-const cooldowns = new Map();
-const COOLDOWN_TIME = 30 * 1000; // 30 segundos cooldown
+const handler = async (m, { conn, text, usedPrefix, command }) => {
+  if (!text) return m.reply(" `Ingresa el nombre del video de YouTube`.")
 
-async function downloadYoutubeAudio(videoUrl) {
+  await m.react("🕘")
+
   try {
-    console.log(`🎵 [YTMP3] Iniciando descarga para: ${videoUrl}`);
+    let url = text
+    let title = "Desconocido"
+    let authorName = "Desconocido"
+    let durationTimestamp = "Desconocida"
+    let views = "Desconocidas"
+    let thumbnail = ""
 
-    // 🎵 Obtener token de captcha
-    const cfApiUrl = 'https://api.nekolabs.web.id/tools/bypass/cf-turnstile';
-    const cfPayload = {
-      url: 'https://ezconv.cc',
-      siteKey: '0x4AAAAAAAi2NuZzwS99-7op'
-    };
-
-    console.log(`🎵 [YTMP3] Obteniendo token captcha...`);
-    const { data: cfResponse } = await axios.post(cfApiUrl, cfPayload);
-
-    if (!cfResponse.success || !cfResponse.result) {
-      return {
-        success: false,
-        error: 'No se pudo obtener el token de captcha'
-      };
+    if (!text.startsWith("https://")) {
+      const res = await yts(text)
+      if (!res?.videos?.length) return m.reply("🚫 No encontré nada.")
+      const video = res.videos[0]
+      title = video.title
+      authorName = video.author?.name
+      durationTimestamp = video.timestamp
+      views = video.views
+      url = video.url
+      thumbnail = video.thumbnail
     }
 
-    const captchaToken = cfResponse.result;
-    console.log(`🎵 [YTMP3] Token captcha obtenido`);
+    const vistas = formatViews(views)
 
-    // 🎵 Convertir video a audio
-    const convertApiUrl = 'https://ds1.ezsrv.net/api/convert';
-    const convertPayload = {
-      url: videoUrl,
-      quality: '320',
-      trim: false,
-      startT: 0,
-      endT: 0,
-      captchaToken: captchaToken
-    };
+    const res3 = await fetch("https://files.catbox.moe/wfd0ze.jpg")
+    const thumb3 = Buffer.from(await res3.arrayBuffer())
 
-    console.log(`🎵 [YTMP3] Enviando petición de conversión...`);
-    const { data: convertResponse } = await axios.post(convertApiUrl, convertPayload, {
-      headers: {
-        'Content-Type': 'application/json'
+    const fkontak = {
+      key: { fromMe: false, participant: "0@s.whatsapp.net" },
+      message: {
+        documentMessage: {
+          title: `『 ${title} 』`,
+          fileName: global.botname || "Shadow Bot",
+          jpegThumbnail: thumb3
+        }
+      }
+    }
+
+    const caption = `
+✧━『 𝙸𝚗𝚏𝚘 𝚍𝚎𝚕 𝚊𝚞𝚍𝚒𝚘 』━✧
+
+🎼 𝚃𝚒𝚝𝚞𝚕𝚘: ${title}
+📺 𝙲𝚊𝚗𝚊𝚕: ${authorName}
+👁️ 𝚅𝚒𝚜𝚝𝚊𝚜: ${vistas}
+⏳ 𝙳𝚞𝚛𝚊𝚌𝚒ó𝚗: ${durationTimestamp}
+🌐 𝙴𝚗𝚕𝚊𝚌𝚎: ${url}
+
+✧━『 *MICHI WA BOT* 』━✧
+   ⚡ 𝙱𝚢 𝚆𝙸𝙻𝙺𝙴𝚁 𝙾𝙵𝙲 ⚡
+
+🎵 𝙳𝚎𝚜𝚌𝚊𝚛𝚐𝚊𝚗𝚍𝚘 𝙰𝚞𝚍𝚒𝚘...
+`
+
+    const thumb = (await conn.getFile(thumbnail)).data
+
+    // Enviar primero la info del video
+    await conn.sendMessage(
+      m.chat,
+      {
+        image: thumb,
+        caption,
+        footer: "⚡ Michi — Descargas rápidas ⚡",
+        headerType: 4
       },
-      timeout: 60000 // 60 segundos timeout
-    });
+      { quoted: fkontak }
+    )
 
-    if (convertResponse.status !== 'done') {
-      return {
-        success: false,
-        error: `La conversión falló. Estado: ${convertResponse.status}`
-      };
-    }
+    // Descargar y enviar el audio automáticamente
+    await downloadAudio(conn, m, url)
 
-    console.log(`🎵 [YTMP3] Conversión exitosa: ${convertResponse.title}`);
-
-    return {
-      success: true,
-      data: {
-        title: convertResponse.title,
-        downloadUrl: convertResponse.url,
-        status: convertResponse.status,
-        quality: '320kbps'
-      }
-    };
-
-  } catch (error) {
-    console.error(`🎵 [YTMP3] Error:`, error.message);
-    return {
-      success: false,
-      error: error.response?.data ? JSON.stringify(error.response.data) : error.message
-    };
+  } catch (e) {
+    m.reply("❌ Error: " + e.message)
+    m.react("⚠️")
   }
 }
 
-// 🎵 Función para buscar música por nombre
-async function searchMusicByName(query) {
+const fetchBuffer = async (url) => {
+  const response = await fetch(url)
+  return await response.buffer()
+}
+
+const downloadAudio = async (conn, m, url) => {
   try {
-    console.log(`🎵 [SEARCH] Buscando: "${query}"`);
+    const sent = await conn.sendMessage(m.chat, { text: "🎵 Descargando audio, por favor espera..." }, { quoted: m })
 
-    const search = await yts(query);
+    const apiUrl = `https://api-adonix.ultraplus.click/download/ytaudio?url=${encodeURIComponent(url)}&apikey=KEYGOHANBOT`
 
-    if (!search.videos || !search.videos.length) {
-      return {
-        success: false,
-        error: 'No se encontraron resultados'
-      };
+    const r = await fetch(apiUrl)
+    const data = await r.json()
+
+    if (!data?.status || !data?.data?.url) {
+      await conn.sendMessage(
+        m.chat,
+        { text: "🚫 No se pudo descargar el audio.", edit: sent.key }
+      )
+      return
     }
 
-    // Tomar el primer resultado
-    const video = search.videos[0];
+    const fileUrl = data.data.url
+    const fileTitle = cleanName(data.data.title || "audio")
 
-    return {
-      success: true,
-      data: {
-        title: video.title,
-        url: video.url,
-        thumbnail: `https://i.ytimg.com/vi/${video.videoId}/hqdefault.jpg`,
-        duration: video.timestamp,
-        channel: video.author.name,
-        views: video.views.toLocaleString()
-      }
-    };
+    // Descargar el buffer del audio
+    const audioBuffer = await fetchBuffer(fileUrl)
 
-  } catch (error) {
-    console.error(`🎵 [SEARCH] Error:`, error);
-    return {
-      success: false,
-      error: 'Error en la búsqueda'
-    };
+    // Enviar el audio
+    await conn.sendMessage(
+      m.chat,
+      { 
+        audio: audioBuffer, 
+        mimetype: "audio/mpeg", 
+        fileName: fileTitle + ".mp3",
+        caption: `✅ Audio descargado\n\n🎼 Título: ${fileTitle}` 
+      },
+      { quoted: m }
+    )
+
+    // Actualizar mensaje de estado
+    await conn.sendMessage(
+      m.chat,
+      { text: `✅ Audio descargado con éxito`, edit: sent.key }
+    )
+
+    await m.react("✅")
+  } catch (e) {
+    console.error(e)
+    await conn.sendMessage(
+      m.chat,
+      { text: "❌ Error al descargar el audio: " + e.message }
+    )
+    await m.react("💀")
   }
 }
 
-// 🎵 Handler principal para .play (búsqueda por nombre)
-let handler = async (m, { conn, args }) => {
-  const userId = m.sender;
+const cleanName = (name) => name.replace(/[^\w\s-_.]/gi, "").substring(0, 50)
 
-  // 🎵 Verificar cooldown
-  if (cooldowns.has(userId)) {
-    const expire = cooldowns.get(userId);
-    const remaining = expire - Date.now();
-    if (remaining > 0) {
-      await m.react('⏳');
-      return m.reply(`⏳ *Espera ${Math.ceil(remaining / 1000)} segundos* antes de otra descarga.`);
-    }
-  }
-
-  // 🎵 Verificar si hay búsqueda
-  if (!args[0]) {
-    await m.react('❓');
-    return m.reply(`🎵 *Usa:* .play <nombre de canción>\nEjemplo: .play bad bunny tití me preguntó`);
-  }
-
-  const searchQuery = args.join(' ');
-
-  // 🎵 Activar cooldown
-  cooldowns.set(userId, Date.now() + COOLDOWN_TIME);
-
-  try {
-    await m.react('🔍');
-    const searchMsg = await m.reply(`🔍 *Buscando:* "${searchQuery}"\n⚡ *Michi wabot* procesando...`);
-
-    // 🎵 Buscar música por nombre
-    const searchResult = await searchMusicByName(searchQuery);
-
-    if (!searchResult.success) {
-      cooldowns.delete(userId);
-      await m.react('❌');
-      await conn.sendMessage(m.chat, {
-        text: `❌ *No se encontró:* "${searchQuery}"\n\n⚡ Intenta con otro nombre.`,
-        edit: searchMsg.key
-      });
-      return;
-    }
-
-    const { title, url, thumbnail, duration, channel, views } = searchResult.data;
-
-    // 🎵 Mostrar información del video encontrado
-    await conn.sendMessage(m.chat, {
-      text: `✅ *VIDEO ENCONTRADO*\n\n🎵 *Título:* ${title}\n👤 *Canal:* ${channel}\n⏱️ *Duración:* ${duration}\n👁️ *Vistas:* ${views}\n\n⚡ *Michi wabot* descargando audio...`,
-      edit: searchMsg.key
-    });
-
-    await m.react('📥');
-
-    // 🎵 Descargar audio usando la URL encontrada
-    const audioResult = await downloadYoutubeAudio(url);
-
-    if (!audioResult.success) {
-      cooldowns.delete(userId);
-      await m.react('❌');
-      await conn.sendMessage(m.chat, {
-        text: `❌ *Error en descarga*\n\n${audioResult.error}\n\n⚡ Intenta más tarde.`,
-        edit: searchMsg.key
-      });
-      return;
-    }
-
-    const { downloadUrl, quality } = audioResult.data;
-
-    // 🎵 Limpiar nombre del archivo
-    const cleanTitle = title
-      .replace(/[^\w\sáéíóúÁÉÍÓÚñÑ]/gi, '')
-      .substring(0, 50)
-      .trim();
-
-    const fileName = `${cleanTitle}.mp3`;
-
-    // 🎵 Informar que se está descargando
-    await conn.sendMessage(m.chat, {
-      text: `📥 *DESCARGANDO AUDIO*\n\n🎵 ${title}\n🔊 Calidad: ${quality}\n⏳ Descargando...`,
-      edit: searchMsg.key
-    });
-
-    // 🎵 Descargar buffer del audio
-    const audioResponse = await fetch(downloadUrl);
-
-    if (!audioResponse.ok) {
-      throw new Error(`Error HTTP: ${audioResponse.status}`);
-    }
-
-    const audioBuffer = await audioResponse.buffer();
-
-    if (audioBuffer.length === 0) {
-      throw new Error('Audio vacío');
-    }
-
-    // 🎵 Enviar audio
-    await m.react('✅');
-    await conn.sendMessage(m.chat, {
-      audio: audioBuffer,
-      mimetype: 'audio/mpeg',
-      fileName: fileName,
-      caption: `✅ *AUDIO DESCARGADO*\n\n🎵 ${title}\n🔊 ${quality}\n👤 ${channel}\n⏱️ ${duration}\n\n⚡ *TECH BOT V1*`,
-      quoted: m
-    });
-
-    // 🎵 Limpiar cooldown después de éxito
-    setTimeout(() => {
-      cooldowns.delete(userId);
-    }, COOLDOWN_TIME);
-
-    console.log(`🎵 [PLAY] Audio enviado: ${title}`);
-
-  } catch (error) {
-    console.error(`🎵 [PLAY] Error handler:`, error);
-    cooldowns.delete(userId);
-
-    await m.react('💥');
-
-    // 🎵 Mensajes de error específicos
-    const errorMessages = {
-      'timeout': '⏳ *TIEMPO AGOTADO*\nEl servidor tardó demasiado.',
-      'ENOTFOUND': '❌ *SERVIDOR NO DISPONIBLE*\nIntenta más tarde.',
-      'ECONNREFUSED': '❌ *CONEXIÓN RECHAZADA*\nServidor sobrecargado.',
-      'default': `❌ *ERROR*\n${error.message}`
-    };
-
-    let errorMsg = errorMessages.default;
-    if (error.message.includes('timeout')) errorMsg = errorMessages.timeout;
-    if (error.message.includes('ENOTFOUND')) errorMsg = errorMessages.ENOTFOUND;
-    if (error.message.includes('ECONNREFUSED')) errorMsg = errorMessages.ECONNREFUSED;
-
-    await m.reply(errorMsg);
-  }
+const formatViews = (views) => {
+  if (views === undefined || views === null) return "No disponible"
+  if (views >= 1000000000) return `${(views / 1000000000).toFixed(1)}B`
+  if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`
+  if (views >= 1000) return `${(views / 1000).toFixed(1)}K`
+  return views.toString()
 }
 
-// 🎵 Handler para .ytmp3 (URL directa)
-let handler2 = async (m, { conn, args }) => {
-  const userId = m.sender;
+handler.command = ["play",]
+handler.tags = ["descargas"]
+handler.help = ["play"]
+handler.register = false
 
-  // 🎵 Verificar cooldown
-  if (cooldowns.has(userId)) {
-    const expire = cooldowns.get(userId);
-    const remaining = expire - Date.now();
-    if (remaining > 0) {
-      await m.react('⏳');
-      return m.reply(`⏳ *Espera ${Math.ceil(remaining / 1000)} segundos* antes de otra descarga.`);
-    }
-  }
-
-  // 🎵 Verificar URL
-  if (!args[0]) {
-    await m.react('❓');
-    return m.reply(`🎵 *Usa:* .ytmp3 <URL de YouTube>\nEjemplo: .ytmp3 https://youtu.be/JiEW1agPqNY`);
-  }
-
-  let videoUrl = args[0];
-
-  // 🎵 Validar URL de YouTube
-  if (!videoUrl.match(/(youtube\.com|youtu\.be)/)) {
-    await m.react('❌');
-    return m.reply('❌ *URL inválida* - Solo links de YouTube.');
-  }
-
-  // 🎵 Extraer ID de video si es necesario
-  if (videoUrl.includes('youtu.be/')) {
-    const videoId = videoUrl.split('youtu.be/')[1]?.split('?')[0];
-    videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-  }
-
-  // 🎵 Activar cooldown
-  cooldowns.set(userId, Date.now() + COOLDOWN_TIME);
-
-  try {
-    await m.react('🔍');
-    const processingMsg = await m.reply(`🔍 *PROCESANDO AUDIO*\n\nObteniendo información...\n⚡ *Michi wabot* preparando...`);
-
-    // 🎵 Descargar audio
-    const result = await downloadYoutubeAudio(videoUrl);
-
-    if (!result.success) {
-      cooldowns.delete(userId);
-      await m.react('❌');
-      await conn.sendMessage(m.chat, {
-        text: `❌ *ERROR EN DESCARGA*\n\n${result.error}\n\n⚡ Intenta con otro video.`,
-        edit: processingMsg.key
-      });
-      return;
-    }
-
-    const { title, downloadUrl, quality } = result.data;
-
-    // 🎵 Limpiar nombre del archivo
-    const cleanTitle = title
-      .replace(/[^\w\sáéíóúÁÉÍÓÚñÑ]/gi, '')
-      .substring(0, 50)
-      .trim();
-
-    const fileName = `${cleanTitle}.mp3`;
-
-    // 🎵 Informar que se está descargando
-    await conn.sendMessage(m.chat, {
-      text: `📥 *DESCARGANDO AUDIO*\n\n🎵 ${title}\n🔊 Calidad: ${quality}\n⏳ Descargando archivo...`,
-      edit: processingMsg.key
-    });
-
-    // 🎵 Descargar buffer
-    await m.react('📥');
-    const audioResponse = await fetch(downloadUrl);
-
-    if (!audioResponse.ok) {
-      throw new Error(`Error HTTP: ${audioResponse.status}`);
-    }
-
-    const audioBuffer = await audioResponse.buffer();
-
-    if (audioBuffer.length === 0) {
-      throw new Error('Audio vacío');
-    }
-
-    // 🎵 Enviar audio
-    await m.react('✅');
-    await conn.sendMessage(m.chat, {
-      audio: audioBuffer,
-      mimetype: 'audio/mpeg',
-      fileName: fileName,
-      caption: `✅ *AUDIO DESCARGADO*\n\n🎵 ${title}\n🔊 ${quality}\n\n⚡ *Michi wabot*`,
-      quoted: m
-    });
-
-    // 🎵 Limpiar cooldown después de éxito
-    setTimeout(() => {
-      cooldowns.delete(userId);
-    }, COOLDOWN_TIME);
-
-    console.log(`🎵 [YTMP3] Audio enviado: ${title}`);
-
-  } catch (error) {
-    console.error(`🎵 [YTMP3] Error handler:`, error);
-    cooldowns.delete(userId);
-
-    await m.react('💥');
-
-    // 🎵 Mensajes de error específicos
-    const errorMessages = {
-      'timeout': '⏳ *TIEMPO AGOTADO*\nEl servidor tardó demasiado.',
-      'ENOTFOUND': '❌ *SERVIDOR NO DISPONIBLE*\nIntenta más tarde.',
-      'ECONNREFUSED': '❌ *CONEXIÓN RECHAZADA*\nServidor sobrecargado.',
-      'default': `❌ *ERROR*\n${error.message}`
-    };
-
-    let errorMsg = errorMessages.default;
-    if (error.message.includes('timeout')) errorMsg = errorMessages.timeout;
-    if (error.message.includes('ENOTFOUND')) errorMsg = errorMessages.ENOTFOUND;
-    if (error.message.includes('ECONNREFUSED')) errorMsg = errorMessages.ECONNREFUSED;
-
-    await m.reply(errorMsg);
-  }
-}
-
-// 🎵 Comandos para .play (búsqueda por nombre)
-handler.help = ['play <nombre de canción>'];
-handler.tags = ['dl', 'audio'];
-handler.command = ['play', 'p', 'musica'];
-
-// 🎵 Comandos para .ytmp3 (URL directa)
-handler2.help = ['ytmp3 <URL de YouTube>'];
-handler2.tags = ['dl', 'audio'];
-handler2.command = ['ytmp3', 'yta', 'ytaudio'];
-
-export default handler;
-export { handler2 };
+export default handler

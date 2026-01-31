@@ -4,10 +4,10 @@ import { fileURLToPath } from 'url'
 
 // 👑 Dueños del bot
 global.owner = [
-  ['573105375475', 'yuly', true],      // 👑 Yuly - Creadora
-  ['5492644893953','wilker', true],    // 👑 Wilker - Co-creador
-  ['573245517485', 'ania', true],      // 👑 Ania Bot - Auto-administrador
-  ['595972314588', 'soporte', true]    // 👑 Soporte Técnico
+  ['573105375475', 'yuly', true],
+  ['5492644893953','wilker', true],
+  ['573245517485', 'ania', true],
+  ['595972314588', 'soporte', true]
 ]
 
 global.mods = []      // Moderadores

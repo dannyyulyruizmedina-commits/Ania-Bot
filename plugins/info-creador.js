@@ -2,7 +2,7 @@ let handler = async (m, { conn }) => {
   const name = 'Yuly'
   const number = '573105375475' // sin @
   const email = 'developer.wilker.ofc@gmail.com'
-  const org = 'Creador de Ania bot'
+  const org = 'Creadora de Ania bot'
   const note = 'Mini desarrolladora de bots de WhatsApp'
 
   const vcard = `

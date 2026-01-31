@@ -1,47 +1,27 @@
-# ⭐Wa Michi bot
+# 🚀 Ania Bot v1.2.0 - Asistente de WhatsApp  
 
-<div align="center">
-  <img src="https://iili.io/FZQTsXR.jpg" alt="Michi-WaBot Logo" width="150"/>
-  <br>
-  <p>Un bot de WhatsApp ligero, confiable y fácil de usar, diseñado para la comunidad.</p>
-</div>
+<p align="center">
+  <img src="https://files.catbox.moe/98cg9u.jpg" alt="Ania Bot" width="300" height="300">
+</p>
 
----
-
-## 📊 𝗘𝘀𝘁𝗮𝗱𝗼 𝗱𝗲𝗹 𝗥𝗲𝗽𝗼𝘀𝗶𝘁𝗼𝗿𝗶𝗼
-
-Estos indicadores muestran el estado actualizado del proyecto en GitHub.
-
-![GitHub stars](https://img.shields.io/github/stars/WILKER-OFC/Michi-wabot?style=for-the-badge&logo=github&color=yellow)
-![GitHub forks](https://img.shields.io/github/forks/WILKER-OFC/Michi-wabot?style=for-the-badge&logo=github&color=blue)
-![GitHub last commit](https://img.shields.io/github/last-commit/WILKER-OFC/Michi-wabot?style=for-the-badge&logo=github&color=green)
+## 📌 Descripción  
+**Ania Bot** es un bot de WhatsApp versátil y potente diseñado para mejorar tu experiencia de mensajería. Con la versión 1.2.0, Ania Bot trae nuevas funciones, mayor estabilidad e interacciones más inteligentes para hacer que tu uso de WhatsApp sea más eficiente y divertido.  
 
 ---
 
-## 🤝 𝗖𝗿𝗲𝗱𝗶𝘁𝗼𝘀 𝘆 𝗔𝗴𝗿𝗮𝗱𝗲𝗰𝗶𝗺𝗶𝗲𝗻𝘁𝗼𝘀
-
-* **Creador y Mantenedor Principal:** [WILKER](https://github.com/WILKER-OFC)
-
-    <div align="center">
-      <a href="https://github.com/WILKER-OFC">
-        <img src="https://github.com/WILKER-OFC.png" alt="WILKER-OFC's GitHub Profile Picture" width="80" style="border-radius:50%;" />
-      </a>
-    </div>
+## ✨ Características  
+✅ **Respuestas Automáticas** – Responde automáticamente a comandos y mensajes.  
+✅ **Multifuncionalidad** – Soporta comandos divertidos, útiles y de moderación.  
+✅ **Fácil Configuración** – Proceso de configuración y despliegue sencillo.  
+✅ **Personalizable** – Modifica comandos y respuestas según tus necesidades.  
+✅ **Soporte Multimedia** – Maneja imágenes, audio, videos y documentos.  
+✅ **Gestión de Grupos** – Herramientas para moderar chats grupales.  
 
 ---
 
-## 🦖 𝗥𝗲𝗰𝘂𝗿𝘀𝗼𝘀 𝗔𝗱𝗶𝗰𝗶𝗼𝗻𝗮𝗹𝗲𝘀
+## 🛠️ Instalación  
 
-* **🌤 swallox Host:** Nuestro proveedor de hosting recomendado para proyectos.
-    * <a href="https://dash.swallox.com">
-          <img src="https://h.uguu.se/ariKTrAk.jpeg" alt="swalloz Host" width="150"/>
-      </a>
-
----
-
-## ❄ 𝗟𝗶𝗰𝗲𝗻𝗰𝗶𝗮
-
-Este proyecto está bajo la **Licencia MIT**. Puedes usar, modificar y distribuir el código libremente, siempre y cuando mantengas los créditos originales.
-
-
-© 2026 WILKER OFC
+1. **Clonar el Repositorio**  
+   ```bash
+   git clone https://github.com/tu-repositorio/ania-bot.git
+   cd ania-bot

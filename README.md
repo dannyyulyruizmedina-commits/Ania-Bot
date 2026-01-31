@@ -1,7 +1,7 @@
-# 🚀 Ania Bot v1.2.0 - Asistente de WhatsApp  
+# 🚀 Ania Bot v1.2.0   
 
 <p align="center">
-  <img src="https://files.catbox.moe/98cg9u.jpg" alt="Ania Bot" width="300" height="300">
+  <img src="https://i.ibb.co/vx8pBD5Z/tourl-1769880807867.jpg" alt="Ania Bot" width="300" height="300">
 </p>
 
 ## 📌 Descripción  

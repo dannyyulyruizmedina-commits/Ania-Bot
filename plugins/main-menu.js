@@ -85,7 +85,7 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
     // Nombre del bot siempre "ANIA BOT" 🌸💗
     let nombreBot = 'ANIA BOT'
     // Imagen de Ania Bot
-    let bannerFinal = 'https://i.ibb.co/vx8pBD5Z/tourl-1769880807867.jpg'
+    let bannerFinal = 'https://i.ibb.co/354xjG1k/IMG-20260202-WA0695.jpg'
 
     // Intentar leer configuración personalizada
     const botActual = conn.user?.jid?.split('@')[0].replace(/\D/g, '')

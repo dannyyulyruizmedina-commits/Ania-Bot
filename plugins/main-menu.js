@@ -288,4 +288,4 @@ function getAniaLevel(level) {
 }
 
 // Alias kawaii para el handler
-handler.alias = ['menuu', 'ayudame', 'comanditos', 'aniahelp']
+handler.alias = ['menuu', 'ayudame', 'comanditos', 'aniahelpp']

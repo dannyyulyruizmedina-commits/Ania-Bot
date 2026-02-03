@@ -47,6 +47,7 @@ const defaultMenu = {
 ╠════════════════╣
 ║🌸 *ANIA BOT* 💗
 ║✨ Creado por YULY~ (◕‿◕✿)
+║🩵 Colaborador (WILKER)
 ║💗 Base: HOUSE ANIA
 ║💫 Domina el chat con estilo!
 ╚════════════════╝

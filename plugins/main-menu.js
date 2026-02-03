@@ -26,7 +26,7 @@ const tags = {
 const defaultMenu = {
   before: `
 ╔════════════════════╗
-║🌸 ANIA BOT MODE 💗 ║
+║🌸 ANIA BOT MODE 💗     ║
 ╠════════════════════╣
 ║ Hola~ soy %botname (◕ᴗ◕✿)
 ║ *%name*, %greeting
